@@ -88,3 +88,41 @@
   color: #4caf50;
   font-weight: bold;
 }
+
+.result-screen {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  z-index: 20;
+}
+
+.result-screen h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.result-screen p {
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.result-screen button {
+  padding: 0.8rem 1.2rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+}
+
+/* アニメーション停止用 */
+.obstacle.paused {
+  animation-play-state: paused !important;
+}

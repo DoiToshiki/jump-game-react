@@ -6,17 +6,26 @@ const Game = () => {
   const [position, setPosition] = useState(0);
   const [isJumping, setIsJumping] = useState(false);
   const [score, setScore] = useState(0);
-  const [isGameOver, setIsGameOver] = useState(false); // 🔹 GameOverフラグ
-  const [isPaused, setIsPaused] = useState(false); // 🔹一時停止フラグ
-  const [isCleared, setIsCleared] = useState(false); // 🔹クリア状態
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isCleared, setIsCleared] = useState(false);
+  const [isRestarting, setIsRestarting] = useState(false);
 
   const characterRef = useRef(null);
   const obstacleRef = useRef(null);
 
-  // スペースキーでジャンプ
+  // 衝突時はアニメーション停止用クラスを付ける
+  const obstacleClass = `obstacle ${isGameOver ? 'paused' : ''}`;
+
+  useEffect(() => {
+    if (isRestarting) {
+      window.location.reload();
+    }
+  }, [isRestarting]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.code === 'Space' && !isJumping && !isGameOver && !isPaused) {
+      if (e.code === 'Space' && !isJumping && !isGameOver && !isPaused && !isCleared) {
         setIsJumping(true);
         let height = 0;
         const jumpHeight = 120;
@@ -46,9 +55,8 @@ const Game = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isJumping, isGameOver, isPaused, isCleared]);
 
-  // 衝突判定ループ
   useEffect(() => {
-    if (isPaused || isGameOver) return;
+    if (isPaused || isGameOver || isCleared) return;
     const checkCollision = setInterval(() => {
       if (characterRef.current && obstacleRef.current) {
         const charRect = characterRef.current.getBoundingClientRect();
@@ -61,18 +69,16 @@ const Game = () => {
           charRect.top < obsRect.bottom;
 
         if (isCollision) {
-          alert("💥 ゲームオーバー！");
-          window.location.reload();
-          setIsGameOver(true); // フラグだけ立てる
+          setIsGameOver(true); // ← 修正ポイント（reload削除）
         }
-        // 障害物が左側を通過（50px）していたら1回だけスコア加算
+
         if (!isCollision && obsRect.right < charRect.left && !obstacleRef.current.counted) {
           setScore((prev) => {
             const newScore = prev + 1;
             if (newScore >= 10) setIsCleared(true);
             return newScore;
           });
-          obstacleRef.current.counted = true; // 1回だけカウント
+          obstacleRef.current.counted = true;
         }
       }
     }, 50);
@@ -83,7 +89,7 @@ const Game = () => {
     if (obstacleRef.current) {
       const obs = obstacleRef.current;
       const handleAnimationIteration = () => {
-        obs.counted = false; // 再び通過判定できるようにする
+        obs.counted = false;
       };
       obs.addEventListener('animationiteration', handleAnimationIteration);
       return () => {
@@ -92,20 +98,13 @@ const Game = () => {
     }
   }, []);
 
-
   return (
     <div className="game-container">
       <button className="menu-button" onClick={() => setIsPaused(true)}>☰</button>
       <h1>JUMP GAME</h1>
       <p>Score: {score} / 10</p>
+
       <div className="game-area">
-        <img
-          src={characterImg}
-          alt="character"
-          className="character"
-          style={{ bottom: `${position}px` }}
-        />
-        <div className="obstacle" />
         <img
           ref={characterRef}
           src={characterImg}
@@ -113,11 +112,9 @@ const Game = () => {
           className="character"
           style={{ bottom: `${position}px` }}
         />
-        <div
-          ref={obstacleRef}
-          className="obstacle"
-        />
+        <div ref={obstacleRef} className={obstacleClass} />
       </div>
+
       {isGameOver && <p className="game-over">💥 GAME OVER 💥</p>}
       {isCleared && <p className="game-clear">🎉 GAME CLEAR 🎉</p>}
       {!isGameOver && !isCleared && <p>Press Space to Jump</p>}
@@ -127,6 +124,14 @@ const Game = () => {
           <button onClick={() => setIsPaused(false)}>▶ 再開</button>
           <button onClick={() => window.location.reload()}>🔁 リスタート</button>
           <button onClick={() => window.location.href = '/'}>🏠 スタート画面に戻る</button>
+        </div>
+      )}
+
+      {(isGameOver || isCleared) && (
+        <div className="result-screen">
+          <h2>{isCleared ? '🎉 SUCCESS 🎉' : '💥 FAILURE 💥'}</h2>
+          <p>Score: {score} / 10</p>
+          <button onClick={() => setIsRestarting(true)}>🔁 Restart</button>
         </div>
       )}
     </div>
