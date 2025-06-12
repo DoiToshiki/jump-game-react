@@ -5,20 +5,13 @@ import characterImg from '../assets/character.png';
 const Game = () => {
   const [position, setPosition] = useState(0);
   const [isJumping, setIsJumping] = useState(false);
-  const [score, setScore] = useState(0);             // 🔹 スコア用のstate
+  const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false); // 🔹 GameOverフラグ
   const [isPaused, setIsPaused] = useState(false); // 🔹一時停止フラグ
+  const [isCleared, setIsCleared] = useState(false); // 🔹クリア状態
+
   const characterRef = useRef(null);
   const obstacleRef = useRef(null);
-
-  // スコア更新ループ（毎秒+1）
-  useEffect(() => {
-    if (isPaused || isGameOver) return; // 🔹停止中は加算しない
-    const scoreInterval = setInterval(() => {
-      setScore((prev) => prev + 1);
-    }, 1000);
-    return () => clearInterval(scoreInterval);
-  }, [isGameOver, isPaused]);
 
   // スペースキーでジャンプ
   useEffect(() => {
@@ -51,7 +44,7 @@ const Game = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isJumping, isGameOver, isPaused]);
+  }, [isJumping, isGameOver, isPaused, isCleared]);
 
   // 衝突判定ループ
   useEffect(() => {
@@ -72,18 +65,39 @@ const Game = () => {
           window.location.reload();
           setIsGameOver(true); // フラグだけ立てる
         }
+        // 障害物が左側を通過（50px）していたら1回だけスコア加算
+        if (!isCollision && obsRect.right < charRect.left && !obstacleRef.current.counted) {
+          setScore((prev) => {
+            const newScore = prev + 1;
+            if (newScore >= 10) setIsCleared(true);
+            return newScore;
+          });
+          obstacleRef.current.counted = true; // 1回だけカウント
+        }
       }
     }, 50);
     return () => clearInterval(checkCollision);
-  }, [isPaused, isGameOver]);
+  }, [isPaused, isGameOver, isCleared]);
+
+  useEffect(() => {
+    if (obstacleRef.current) {
+      const obs = obstacleRef.current;
+      const handleAnimationIteration = () => {
+        obs.counted = false; // 再び通過判定できるようにする
+      };
+      obs.addEventListener('animationiteration', handleAnimationIteration);
+      return () => {
+        obs.removeEventListener('animationiteration', handleAnimationIteration);
+      };
+    }
+  }, []);
 
 
   return (
     <div className="game-container">
       <button className="menu-button" onClick={() => setIsPaused(true)}>☰</button>
       <h1>JUMP GAME</h1>
-      <p>Score: 0</p>
-      <p>Score: {score}</p>  {/* スコア反映 */}
+      <p>Score: {score} / 10</p>
       <div className="game-area">
         <img
           src={characterImg}
@@ -104,9 +118,9 @@ const Game = () => {
           className="obstacle"
         />
       </div>
-      <p>Press Space to Jump</p>
       {isGameOver && <p className="game-over">💥 GAME OVER 💥</p>}
-      {!isGameOver && <p>Press Space to Jump</p>}
+      {isCleared && <p className="game-clear">🎉 GAME CLEAR 🎉</p>}
+      {!isGameOver && !isCleared && <p>Press Space to Jump</p>}
 
       {isPaused && (
         <div className="menu-overlay">
