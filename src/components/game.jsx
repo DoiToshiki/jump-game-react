@@ -11,29 +11,36 @@ const Game = () => {
     const handleKeyDown = (e) => {
       if (e.code === 'Space' && !isJumping) {
         setIsJumping(true);
-        let up = 0;
+        let height = 0;
+        const jumpHeight = 120;
+        const speed = 10;
+
+        // 上昇
         const upInterval = setInterval(() => {
-          up += 5;
-          setPosition((prev) => prev + 5);
-          if (up >= 100) {
+          height += speed;
+          setPosition(height);
+          if (height >= jumpHeight) {
             clearInterval(upInterval);
+
+            // 下降
             const downInterval = setInterval(() => {
-              setPosition((prev) => {
-                if (prev <= 0) {
-                  clearInterval(downInterval);
-                  setIsJumping(false);
-                  return 0;
-                }
-                return prev - 5;
-              });
-            }, 20);
+              height -= speed;
+              setPosition(height);
+              if (height <= 0) {
+                clearInterval(downInterval);
+                setIsJumping(false);
+                setPosition(0); // 地面に戻す
+              }
+            }, 16); // 約60fps相当
           }
-        }, 20);
+        }, 16);
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isJumping]);
+
 
   return (
     <div className="game-container">
