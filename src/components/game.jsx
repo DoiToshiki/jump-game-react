@@ -90,6 +90,7 @@ const Game = () => {
       const obs = obstacleRef.current;
       const handleAnimationIteration = () => {
         obs.counted = false;
+
       };
       obs.addEventListener('animationiteration', handleAnimationIteration);
       return () => {
@@ -112,7 +113,10 @@ const Game = () => {
           className="character"
           style={{ bottom: `${position}px` }}
         />
-        <div ref={obstacleRef} className={obstacleClass} />
+        <div
+          ref={obstacleRef}
+          className={obstacleClass}
+        />
       </div>
 
       {isGameOver && <p className="game-over">💥 GAME OVER 💥</p>}
